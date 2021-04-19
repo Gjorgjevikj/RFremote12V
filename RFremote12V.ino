@@ -1,6 +1,6 @@
 /*
-    Name:       AttRem1.ino
-    Created:	30.3.2021 03:51:39
+    Name:       RFremotee12V.ino
+    Created:	19.04.2021 
     Author:     DESKTOP-I9\Dejan
 */
 
@@ -10,7 +10,9 @@
 #include <EEWrap.h>
 #include "rfcodes.h"
 
-#define RF_TX_PIN 4 // the TxPin applied to the 433MHz modulator pin
+#define RF_TX_PIN 0 // the TxPin applied to the 433MHz modulator pin
+#define DIP1_PIN 1 // DIPswitch/jumper pin 1
+#define DIP2_PIN 2 // DIPswitch/jumper pin 2
 
 //#define DEBUG
 
@@ -61,7 +63,7 @@ const long codel = 2180L / 4; // us
 //uint8_e idx1t EEMEM; // 
 uint16_e ee_rfc_idx EEMEM; // 
 
-void transmitT(uint64_t message, uint8_t mlen, int wakeup = 10, int waitwake = 90)
+void transmitT(uint64_t message, uint8_t mlen, int wakeup = 11, int waitwake = 95)
 {
     const unsigned int syncup = 1475; // 1450;
     const unsigned int syncdown = 1675; // 1650;
@@ -141,17 +143,29 @@ int cnt = 0;
 uint16_t rfcode_idx = 0;
 uint64_t code;
 uint64_t codeP;
+bool dip1, dip2;
 
 void setup()
 {
     pinMode(RF_TX_PIN, OUTPUT);
+    pinMode(DIP1_PIN, INPUT_PULLUP);
+    pinMode(DIP2_PIN, INPUT_PULLUP);
 
     DebugBegin(SERIAL_SPEED);
     DebugPrintln("");
     DebugPrintV(F("idx was: "), ee_rfc_idx);
     DebugPrintVln(F(" / "), n_msgsP);
 
-    ee_rfc_idx++;
+    dip1 = digitalRead(DIP1_PIN);
+    dip2 = digitalRead(DIP2_PIN);
+
+    if(dip1) // if jumper1 off - advance to next code
+        ee_rfc_idx++;
+    // if jumper1 on - keep transmitting the same code
+
+    if (!dip2) // if jumper1 on - reset code counter to 0 - start codes list from begining
+        ee_rfc_idx = 0;
+
     if (ee_rfc_idx >= n_msgsP)
         ee_rfc_idx = 0;
 
